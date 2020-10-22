@@ -20,7 +20,7 @@ function main(){
     width = canvas.width;
     height = canvas.height;
 
-    playerVector = new vector(0 + objRadius, 0 + objRadius, width, height);
+    playerVector = new vector(0 + objRadius, 0 + objRadius);
 
     setUp();
     update();
@@ -35,7 +35,7 @@ function setUp(){
     allObjects.push(object);
     for (let i = 0; i < objNum; i++) {
         let newObj = object;
-        let objPos = new vector(randomRange(0, width - objRadius), randomRange(0, height - objRadius), width, height);
+        let objPos = new vector(randomRange(0, width - objRadius), randomRange(0, height - objRadius));
         newObj = {obj: new objectClass(false, objRadius), vec: objPos};
         allObjects.push(newObj);
     }
@@ -78,7 +78,18 @@ function reDraw(){
             ctx.stroke();
         }
     }
-    logInfo();
+
+    let a = new vector(1, 0);
+    let r = a.R(180);
+
+    console.log(r)
+
+    ctx.beginPath();
+    ctx.arc(a.position.x, a.position.y, 5, 0, 2 * Math.PI);
+    ctx.moveTo(a.position.x, a.position.y);
+    ctx.lineTo(r.x, r.y);
+    ctx.stroke();
+    // logInfo();
 }
 
 function checkForInput() {
