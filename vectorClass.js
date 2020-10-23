@@ -13,20 +13,27 @@ class vector{
         return {x: this.x, y: this.y};
     }
 
-    R(angle){
-        let maxDistance = 50;
+    R(angle, distance){
+        let radian = (Math.PI / 180) * (angle - 45);
 
-        let xcos = this.x * Math.cos(angle);
-        let xsin = this.x * Math.sin(angle);
-        let ycos = this.y * Math.cos(angle);
-        let ysin = this.y * Math.sin(angle);
+        let cos = Math.cos(radian);
+        let sin = Math.sin(radian);
 
-        console.log(xcos);
-        console.log(xsin);
-        console.log(ycos);
-        console.log(ysin);
+        if(!distance){
+            distance = 10;
+        }
 
-        let rotationCords = {x: (xcos - ysin) * 1, y: (xsin + ycos) * 1};
+        let cx = this.x + distance;
+        let cy = this.y + distance;
+
+        let rotationCords = {
+            x: ((cos * (cx - this.x)) + (sin * (cy - this.y)) + this.x), 
+            y: ((cos * (cy - this.y)) - (sin * (cx - this.x)) + this.y)
+        };
+
+        this.cx = rotationCords.x;
+        this.cy = rotationCords.y;
+
         return rotationCords;
     }
 }

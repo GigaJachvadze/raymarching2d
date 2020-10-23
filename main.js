@@ -4,9 +4,13 @@ let ctx = canvas.getContext('2d');
 let width;
 let height;
 
-let updatePerSec = 8;
+let updatePerSec = 120;
 
 let moveSpeed = 10;
+let rotation = 90;
+let rotationSpeed = 5;
+
+let beamDistance = 5;
 
 let objNum = 5;
 let objRadius = 10;
@@ -20,7 +24,7 @@ function main(){
     width = canvas.width;
     height = canvas.height;
 
-    playerVector = new vector(0 + objRadius, 0 + objRadius);
+    playerVector = new vector(width / 2 + objRadius, height / 2 + objRadius);
 
     setUp();
     update();
@@ -36,7 +40,8 @@ function setUp(){
     for (let i = 0; i < objNum; i++) {
         let newObj = object;
         let objPos = new vector(randomRange(0, width - objRadius), randomRange(0, height - objRadius));
-        newObj = {obj: new objectClass(false, objRadius), vec: objPos};
+        let distance = getDistance(objPos);
+        newObj = {obj: new objectClass(false, objRadius), vec: objPos, distanceFromPlayer: distance};
         allObjects.push(newObj);
     }
 
@@ -45,6 +50,7 @@ function setUp(){
 
 function update(){
     setInterval(r => {
+        updateDistance();
         clearCanvas();
         reDraw();
 
@@ -62,34 +68,40 @@ function reDraw(){
     ctx.stroke();
 
     //drawing objects
+    let lowestDist = Number.MAX_SAFE_INTEGER;
+    let objlowest;
+    for (let i = 0; i < allObjects.length; i++) {
+        if(allObjects[i].distanceFromPlayer < lowestDist){
+            lowestDist = allObjects[i].distanceFromPlayer;
+            objlowest = allObjects[i];
+        }
+    }
+
     for (let i = 0; i < allObjects.length; i++) {
         if(!allObjects[i].obj.isPlayer){
             let vec = allObjects[i].vec.position;
             let radius = allObjects[i].obj.getRadius;
             ctx.beginPath();
-            ctx.fillRect(vec.x, vec.y, radius, radius);
+            ctx.fillRect(vec.x - (radius / 2), vec.y - (radius / 2), radius, radius);
             ctx.stroke();
         }
         else{
             let vec = allObjects[i].vec.position;
             let radius = allObjects[i].obj.getRadius;
+            let r = allObjects[i].vec.R(rotation, lowestDist)
             ctx.beginPath();
-            ctx.arc(vec.x, vec.y, radius, 0.75, 2 * Math.PI);
+            ctx.arc(vec.x, vec.y, radius, 0, 2 * Math.PI);
+            ctx.moveTo(vec.x, vec.y);
+            ctx.lineTo(r.x, r.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(vec.x, vec.y, lowestDist, 0, 2 * Math.PI);
+            ctx.moveTo(vec.x, vec.y);
+            ctx.lineTo(objlowest.vec.position.x, objlowest.vec.position.y);
             ctx.stroke();
         }
     }
-
-    let a = new vector(1, 0);
-    let r = a.R(180);
-
-    console.log(r)
-
-    ctx.beginPath();
-    ctx.arc(a.position.x, a.position.y, 5, 0, 2 * Math.PI);
-    ctx.moveTo(a.position.x, a.position.y);
-    ctx.lineTo(r.x, r.y);
-    ctx.stroke();
-    // logInfo();
+    console.log(lowestDist);
 }
 
 function checkForInput() {
@@ -97,31 +109,62 @@ function checkForInput() {
         if(key.key === 'w' || key.key === 'W'){
             move('UP');
         }
-        else if(key.key === 's' || key.key === 'S'){
+        if(key.key === 's' || key.key === 'S'){
             move('DOWN');
         }
-        else if(key.key === 'd' || key.key === 'D'){
+        if(key.key === 'd' || key.key === 'D'){
             move('RIGHT');
         }
-        else if(key.key === 'a' || key.key === 'A'){
+        if(key.key === 'a' || key.key === 'A'){
             move('LEFT');
+        }
+        if(key.key === 'ArrowRight'){
+            move('ROTR');
+        }
+        if(key.key === 'ArrowLeft'){
+            move('ROTL');
         }
     });
 }
 
 function move(direction) {
-    let oldVec = allObjects[0].vec;
+    let oldVec = playerVector;
+
     if(direction === 'UP'){
-        allObjects[0].vec.move = {newX: oldVec.position.x, newY: oldVec.position.y -= moveSpeed};
+        oldVec.move = {newX: oldVec.position.x, newY: oldVec.position.y -= moveSpeed};
     }
-    else if(direction === 'DOWN'){
-        allObjects[0].vec.move = {newX: oldVec.position.x, newY: oldVec.position.y += moveSpeed};
+    if(direction === 'DOWN'){
+        oldVec.move = {newX: oldVec.position.x, newY: oldVec.position.y += moveSpeed};
     }
-    else if(direction === 'RIGHT'){
-        allObjects[0].vec.move = {newX: oldVec.position.x += moveSpeed, newY: oldVec.position.y};
+    if(direction === 'RIGHT'){
+        oldVec.move = {newX: oldVec.position.x += moveSpeed, newY: oldVec.position.y};
     }
-    else if(direction === 'LEFT'){
-        allObjects[0].vec.move = {newX: oldVec.position.x -= moveSpeed, newY: oldVec.position.y};
+    if(direction === 'LEFT'){
+        oldVec.move = {newX: oldVec.position.x -= moveSpeed, newY: oldVec.position.y};
+    }
+    if(direction === 'ROTR'){
+        rotation -= rotationSpeed;
+    }
+    if(direction === 'ROTL'){
+        rotation += rotationSpeed;
+    }
+}
+
+function getDistance(vector){
+    let p = playerVector;
+
+    let dx = Math.max((vector.position.x - objRadius / 2) - p.position.x, 0, p.position.x - (vector.position.x + objRadius / 2));
+    let dy = Math.max((vector.position.y - objRadius / 2) - p.position.y, 0, p.position.y - (vector.position.y + objRadius / 2)); 
+
+    return Math.sqrt(dx*dx + dy*dy);
+}
+
+function updateDistance(){
+
+    for (let i = 0; i < allObjects.length; i++) {
+        if(!allObjects[i].obj.isPlayer){
+            allObjects[i].distanceFromPlayer = getDistance(allObjects[i].vec);
+        }
     }
 }
 
